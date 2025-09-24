@@ -1,126 +1,146 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { db, storage } from '../firebase';
-import { addDoc, collection, query, where, getDocs, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
 import Layout from '../components/Layout';
 
 export default function ClockIn() {
-  const { currentUser } = useAuth();
-  const navigate = useNavigate();
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  
-  const [step, setStep] = useState('location'); // location, selfie, confirm
-  const [isInOffice, setIsInOffice] = useState(false);
-  const [locationError, setLocationError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selfieData, setSelfieData] = useState(null);
-  const [cameraStream, setCameraStream] = useState(null);
-  const [userLocation, setUserLocation] = useState(null);
+  const [location, setLocation] = useState(null);
+  const [locationError, setLocationError] = useState('');
+  const [photo, setPhoto] = useState(null);
+  const [photoError, setPhotoError] = useState('');
+  const [stream, setStream] = useState(null);
   const [officeLocation, setOfficeLocation] = useState(null);
+  const [alreadyClockedIn, setAlreadyClockedIn] = useState(false);
+
+  const { currentUser, userProfile } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchOfficeLocation();
+    getOfficeLocation();
+    checkTodaysAttendance();
     return () => {
-      // Cleanup camera stream
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
       }
     };
   }, []);
 
-  // Check location when office location is loaded
-  useEffect(() => {
-    if (officeLocation) {
-      checkLocation();
-    }
-  }, [officeLocation]);
-
-  const fetchOfficeLocation = async () => {
+  const getOfficeLocation = async () => {
     try {
-      const locationDoc = await getDoc(doc(db, 'officeSettings', 'location'));
-      if (locationDoc.exists()) {
-        const data = locationDoc.data();
+      const settingsRef = collection(db, 'settings');
+      const settingsSnapshot = await getDocs(settingsRef);
+
+      if (!settingsSnapshot.empty) {
+        const settings = settingsSnapshot.docs[0].data();
         setOfficeLocation({
-          lat: data.latitude,
-          lng: data.longitude,
-          radius: data.radius
-        });
-      } else {
-        // Fallback to default location if not set
-        setOfficeLocation({
-          lat: 28.6139,
-          lng: 77.2090,
-          radius: 100
+          latitude: settings.latitude,
+          longitude: settings.longitude,
+          radius: settings.radius || 100
         });
       }
     } catch (error) {
       console.error('Error fetching office location:', error);
-      // Fallback to default location
-      setOfficeLocation({
-        lat: 28.6139,
-        lng: 77.2090,
-        radius: 100
-      });
     }
   };
 
-  const checkLocation = () => {
-    if (!officeLocation) {
-      setLocationError('Office location not configured. Please contact your administrator.');
-      setLoading(false);
-      return;
-    }
+  const checkTodaysAttendance = async () => {
+    if (!currentUser) return;
 
-    setLoading(true);
-    
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const attendanceRef = collection(db, 'attendance');
+      const todayQuery = query(
+        attendanceRef,
+        where('employeeId', '==', userProfile?.employeeId),
+        where('date', '==', today)
+      );
+
+      const snapshot = await getDocs(todayQuery);
+      if (!snapshot.empty) {
+        const attendance = snapshot.docs[0].data();
+        if (attendance.clockIn && !attendance.clockOut) {
+          setAlreadyClockedIn(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking attendance:', error);
+    }
+  };
+
+  const getCurrentLocation = () => {
+    setLocationError('');
+
     if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by this browser.');
-      setLoading(false);
+      setLocationError('Geolocation is not supported by this browser');
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const userLat = position.coords.latitude;
-        const userLng = position.coords.longitude;
-        
-        setUserLocation({ lat: userLat, lng: userLng });
-        
-        const distance = calculateDistance(
-          userLat, userLng, 
-          officeLocation.lat, officeLocation.lng
-        );
-        
-        if (distance <= officeLocation.radius) {
-          setIsInOffice(true);
-          setLocationError('');
-        } else {
-          setIsInOffice(false);
-          setLocationError(`You are ${Math.round(distance)}m away from office. Please come to office premises to clock in.`);
-        }
-        setLoading(false);
+        setLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        });
       },
       (error) => {
-        setLocationError('Unable to get your location. Please enable location services and try again.');
-        setLoading(false);
+        setLocationError('Error getting location: ' + error.message);
       },
-      { 
+      {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 60000 
+        maximumAge: 60000
       }
     );
   };
 
-  const calculateDistance = (lat1, lng1, lat2, lng2) => {
-    const R = 6371e3;
+  const startCamera = async () => {
+    setPhotoError('');
+
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user' } 
+      });
+      setStream(mediaStream);
+
+      const video = document.getElementById('video');
+      if (video) {
+        video.srcObject = mediaStream;
+      }
+    } catch (error) {
+      setPhotoError('Error accessing camera: ' + error.message);
+    }
+  };
+
+  const capturePhoto = () => {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+
+    if (video && canvas) {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0);
+
+      canvas.toBlob((blob) => {
+        setPhoto(blob);
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+          setStream(null);
+        }
+      }, 'image/jpeg', 0.8);
+    }
+  };
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371e3; // Earth's radius in meters
     const φ1 = lat1 * Math.PI/180;
     const φ2 = lat2 * Math.PI/180;
     const Δφ = (lat2-lat1) * Math.PI/180;
-    const Δλ = (lng2-lng1) * Math.PI/180;
+    const Δλ = (lon2-lon1) * Math.PI/180;
 
     const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
               Math.cos(φ1) * Math.cos(φ2) *
@@ -130,238 +150,175 @@ export default function ClockIn() {
     return R * c;
   };
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' } 
-      });
-      setCameraStream(stream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      alert('Unable to access camera. Please allow camera permissions.');
+  const handleClockIn = async () => {
+    if (!location) {
+      setLocationError('Please get your location first');
+      return;
     }
-  };
 
-  const takeSelfie = () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    
-    if (video && canvas) {
-      const context = canvas.getContext('2d');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0);
-      
-      canvas.toBlob((blob) => {
-        setSelfieData(blob);
-        setStep('confirm');
-        
-        // Stop camera stream
-        if (cameraStream) {
-          cameraStream.getTracks().forEach(track => track.stop());
-        }
-      }, 'image/jpeg', 0.8);
+    if (!photo) {
+      setPhotoError('Please take a selfie first');
+      return;
     }
-  };
 
-  const retakeSelfie = () => {
-    setSelfieData(null);
-    setStep('selfie');
-    startCamera();
-  };
+    if (!officeLocation) {
+      alert('Office location not configured. Please contact admin.');
+      return;
+    }
 
-  const submitClockIn = async () => {
-    if (!isInOffice || !selfieData) {
-      alert('Please ensure you are in office and have taken a selfie.');
+    // Check if user is within office radius
+    const distance = calculateDistance(
+      location.latitude,
+      location.longitude,
+      officeLocation.latitude,
+      officeLocation.longitude
+    );
+
+    if (distance > officeLocation.radius) {
+      alert(`You are ${Math.round(distance)}m away from office. You must be within ${officeLocation.radius}m to clock in.`);
       return;
     }
 
     setLoading(true);
+
     try {
-      // Upload selfie to Firebase Storage
-      const selfieRef = ref(storage, `attendance/${currentUser.uid}/${Date.now()}.jpg`);
-      await uploadBytes(selfieRef, selfieData);
-      const selfieURL = await getDownloadURL(selfieRef);
+      // Upload photo to Firebase Storage
+      const photoRef = ref(storage, `attendance-photos/${currentUser.uid}/${Date.now()}.jpg`);
+      await uploadBytes(photoRef, photo);
+      const photoURL = await getDownloadURL(photoRef);
 
       // Create attendance record
-      await addDoc(collection(db, 'attendance'), {
-        userId: currentUser.uid,
-        type: 'clock-in',
-        timestamp: serverTimestamp(),
-        location: userLocation,
-        selfieURL: selfieURL,
-        date: new Date().toISOString().split('T')[0]
-      });
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
 
-      alert('Clocked in successfully!');
-      navigate('/dashboard');
-    } catch (error) {
-      console.error('Error clocking in:', error);
-      alert('Error clocking in. Please try again.');
-    }
-    setLoading(false);
-  };fieData) return;
-
-    setLoading(true);
-    
-    try {
-      // Check if already clocked in today
-      const today = new Date().toISOString().split('T')[0];
-      const q = query(
-        collection(db, 'attendance'),
-        where('employeeId', '==', currentUser.uid),
-        where('date', '==', today)
-      );
-      const existingRecords = await getDocs(q);
-      
-      if (!existingRecords.empty) {
-        alert('You have already clocked in today!');
-        navigate('/dashboard');
-        return;
-      }
-
-      // Upload selfie to Firebase Storage
-      const selfieRef = ref(storage, `selfies/${currentUser.uid}/${Date.now()}.jpg`);
-      await uploadBytes(selfieRef, selfieData);
-      const selfieURL = await getDownloadURL(selfieRef);
-
-      // Create attendance record
-      const clockInTime = new Date();
-      await addDoc(collection(db, 'attendance'), {
-        employeeId: currentUser.uid,
-        employeeName: currentUser.name,
+      const attendanceData = {
+        employeeId: userProfile.employeeId,
+        employeeName: userProfile.name,
         date: today,
-        clockIn: clockInTime.toTimeString().split(' ')[0],
-        clockInTimestamp: serverTimestamp(),
-        location: userLocation,
-        selfieURL: selfieURL,
-        clockOut: null,
-        clockOutTimestamp: null,
+        clockIn: now.toLocaleTimeString(),
+        clockInTimestamp: now,
+        location: location,
+        selfieURL: photoURL,
         hoursWorked: null
-      });
+      };
+
+      await setDoc(doc(db, 'attendance', `${userProfile.employeeId}_${today}`), attendanceData);
 
       alert('Successfully clocked in!');
       navigate('/dashboard');
     } catch (error) {
       console.error('Error clocking in:', error);
-      alert('Failed to clock in. Please try again.');
+      alert('Error clocking in: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const proceedToSelfie = () => {
-    if (isInOffice) {
-      setStep('selfie');
-      startCamera();
-    }
-  };
+  if (alreadyClockedIn) {
+    return (
+      <Layout>
+        <div className="max-w-md mx-auto mt-8 p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <h2 className="text-xl font-bold text-yellow-800 mb-4">Already Clocked In</h2>
+          <p className="text-yellow-700">You have already clocked in for today. Use the Clock Out page to end your work day.</p>
+          <button
+            onClick={() => navigate('/clock-out')}
+            className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+          >
+            Go to Clock Out
+          </button>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
-      <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Clock In</h1>
-        
-        {/* Step 1: Location Verification */}
-        {step === 'location' && (
-          <div className="space-y-4">
-            <div className="text-center">
-              <h2 className="text-lg font-semibold mb-4">Location Verification</h2>
-              {loading ? (
-                <div className="text-blue-600">
-                  <p>Checking your location...</p>
-                </div>
-              ) : isInOffice ? (
-                <div className="text-green-600">
-                  <p className="mb-2">✓ You are at the office location</p>
-                  <button
-                    onClick={proceedToSelfie}
-                    className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg"
-                  >
-                    Continue to Selfie
-                  </button>
-                </div>
-              ) : (
-                <div className="text-red-600">
-                  <p className="mb-4">{locationError}</p>
-                  <button
-                    onClick={checkLocation}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg"
-                  >
-                    Retry Location Check
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+      <div className="max-w-md mx-auto mt-8 p-6 bg-white shadow-lg rounded-lg">
+        <h2 className="text-2xl font-bold text-center mb-6">Clock In</h2>
 
-        {/* Step 2: Selfie Capture */}
-        {step === 'selfie' && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-center">Take Your Selfie</h2>
+        {/* Location Section */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-2">1. Verify Location</h3>
+          {!location ? (
+            <button
+              onClick={getCurrentLocation}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+            >
+              Get Current Location
+            </button>
+          ) : (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-green-800">✓ Location verified</p>
+              <p className="text-sm text-green-600">
+                Lat: {location.latitude.toFixed(6)}, Lng: {location.longitude.toFixed(6)}
+              </p>
+            </div>
+          )}
+          {locationError && (
+            <p className="text-red-600 text-sm mt-2">{locationError}</p>
+          )}
+        </div>
+
+        {/* Camera Section */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-2">2. Take Selfie</h3>
+          {!stream && !photo && (
+            <button
+              onClick={startCamera}
+              className="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md"
+            >
+              Start Camera
+            </button>
+          )}
+
+          {stream && (
             <div className="text-center">
               <video
-                ref={videoRef}
+                id="video"
                 autoPlay
                 playsInline
-                className="w-full max-w-sm mx-auto rounded-lg"
+                className="w-full max-w-xs mx-auto rounded-md"
               />
-              <canvas ref={canvasRef} style={{ display: 'none' }} />
-              <div className="mt-4">
-                <button
-                  onClick={takeSelfie}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg"
-                >
-                  Capture Selfie
-                </button>
-              </div>
+              <button
+                onClick={capturePhoto}
+                className="mt-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-md"
+              >
+                Capture Photo
+              </button>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Step 3: Confirmation */}
-        {step === 'confirm' && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-center">Confirm Clock In</h2>
-            {selfieData && (
-              <div className="text-center">
-                <img
-                  src={URL.createObjectURL(selfieData)}
-                  alt="Your selfie"
-                  className="w-full max-w-sm mx-auto rounded-lg mb-4"
-                />
-                <div className="space-x-4">
-                  <button
-                    onClick={retakeSelfie}
-                    className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
-                  >
-                    Retake
-                  </button>
-                  <button
-                    onClick={submitClockIn}
-                    disabled={loading}
-                    className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg disabled:opacity-50"
-                  >
-                    {loading ? 'Clocking In...' : 'Clock In'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+          {photo && (
+            <div className="text-center">
+              <canvas id="canvas" className="w-full max-w-xs mx-auto rounded-md" />
+              <p className="text-green-600 mt-2">✓ Photo captured</p>
+              <button
+                onClick={() => {
+                  setPhoto(null);
+                  startCamera();
+                }}
+                className="mt-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md text-sm"
+              >
+                Retake Photo
+              </button>
+            </div>
+          )}
 
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            Back to Dashboard
-          </button>
+          {photoError && (
+            <p className="text-red-600 text-sm mt-2">{photoError}</p>
+          )}
         </div>
+
+        {/* Clock In Button */}
+        <button
+          onClick={handleClockIn}
+          disabled={loading || !location || !photo}
+          className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white px-4 py-3 rounded-md font-semibold"
+        >
+          {loading ? 'Clocking In...' : 'Clock In'}
+        </button>
+
+        <canvas id="canvas" style={{ display: 'none' }} />
       </div>
     </Layout>
   );
