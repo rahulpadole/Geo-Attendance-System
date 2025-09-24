@@ -16,7 +16,7 @@ export default function ClockIn() {
   const [isInOffice, setIsInOffice] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selfieData, setSelfieData] = useState(null);
+  const [selfieData, setSelfieData] = null;
   const [cameraStream, setCameraStream] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [officeLocation, setOfficeLocation] = useState(null);
@@ -337,29 +337,3 @@ export default function ClockIn() {
     </Layout>
   );
 }
-import React from 'react';
-
-const ClockIn = () => {
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
-        <h2 className="text-2xl font-bold text-center mb-6">Clock In</h2>
-        <p className="text-gray-600 text-center mb-6">
-          This feature will include geolocation verification and photo capture.
-        </p>
-        <div className="text-center">
-          <button className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold">
-            Clock In (Coming Soon)
-          </button>
-        </div>
-        <div className="mt-4 text-center">
-          <a href="/dashboard" className="text-blue-500 hover:text-blue-600">
-            Back to Dashboard
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default ClockIn;
