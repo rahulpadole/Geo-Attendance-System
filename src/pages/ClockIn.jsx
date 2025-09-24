@@ -16,7 +16,7 @@ export default function ClockIn() {
   const [isInOffice, setIsInOffice] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selfieData, setSelfieData] = null;
+  const [selfieData, setSelfieData] = useState(null);
   const [cameraStream, setCameraStream] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [officeLocation, setOfficeLocation] = useState(null);
@@ -40,7 +40,7 @@ export default function ClockIn() {
 
   const fetchOfficeLocation = async () => {
     try {
-      const locationDoc = await getDoc(doc(db, 'settings', 'officeLocation'));
+      const locationDoc = await getDoc(doc(db, 'officeSettings', 'location'));
       if (locationDoc.exists()) {
         const data = locationDoc.data();
         setOfficeLocation({
@@ -174,7 +174,36 @@ export default function ClockIn() {
   };
 
   const submitClockIn = async () => {
-    if (!isInOffice || !selfieData) return;
+    if (!isInOffice || !selfieData) {
+      alert('Please ensure you are in office and have taken a selfie.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Upload selfie to Firebase Storage
+      const selfieRef = ref(storage, `attendance/${currentUser.uid}/${Date.now()}.jpg`);
+      await uploadBytes(selfieRef, selfieData);
+      const selfieURL = await getDownloadURL(selfieRef);
+
+      // Create attendance record
+      await addDoc(collection(db, 'attendance'), {
+        userId: currentUser.uid,
+        type: 'clock-in',
+        timestamp: serverTimestamp(),
+        location: userLocation,
+        selfieURL: selfieURL,
+        date: new Date().toISOString().split('T')[0]
+      });
+
+      alert('Clocked in successfully!');
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error clocking in:', error);
+      alert('Error clocking in. Please try again.');
+    }
+    setLoading(false);
+  };fieData) return;
 
     setLoading(true);
     
