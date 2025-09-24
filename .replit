@@ -17,3 +17,7 @@ publicDir = "dist"
 [[ports]]
 localPort = 5173
 externalPort = 80
+
+[agent]
+expertMode = true
+integrations = ["firebase_barebones_javascript:1.0.0"]
