@@ -1,37 +1,3 @@
-
-import React from 'react';
-import Layout from '../../components/Layout';
-
-export default function Reports() {
-  const downloadCSV = () => {
-    alert('CSV download functionality would be implemented here');
-  };
-
-  return (
-    <Layout>
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Download Reports</h1>
-
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-lg font-semibold mb-4">Export Options</h2>
-          
-          <div className="space-y-4">
-            <button
-              onClick={downloadCSV}
-              className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg"
-            >
-              Download Attendance CSV
-            </button>
-            
-            <p className="text-gray-600 text-sm">
-              This feature will export all attendance records to a CSV file.
-            </p>
-          </div>
-        </div>
-      </div>
-    </Layout>
-  );
-}
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -162,12 +128,12 @@ export default function Reports() {
             <h3 className="text-lg font-medium text-gray-900">Total Employees</h3>
             <p className="text-3xl font-bold text-blue-600">{reportData.totalEmployees}</p>
           </div>
-          
+
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-medium text-gray-900">Total Attendance Days</h3>
             <p className="text-3xl font-bold text-green-600">{reportData.monthlyAttendance.length}</p>
           </div>
-          
+
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-medium text-gray-900">Average Daily Attendance</h3>
             <p className="text-3xl font-bold text-purple-600">
@@ -224,7 +190,7 @@ export default function Reports() {
               ))}
             </tbody>
           </table>
-          
+
           {reportData.employeeStats.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               No employee data found for selected month
