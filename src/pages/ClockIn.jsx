@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db, storage } from '../firebase';
-import { addDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { addDoc, collection, query, where, getDocs, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Layout from '../components/Layout';
 
@@ -19,15 +19,10 @@ export default function ClockIn() {
   const [selfieData, setSelfieData] = useState(null);
   const [cameraStream, setCameraStream] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
-
-  // Office location - in real app, this would be fetched from admin settings
-  const OFFICE_LOCATION = {
-    lat: 28.6139,
-    lng: 77.2090,
-    radius: 100
-  };
+  const [officeLocation, setOfficeLocation] = useState(null);
 
   useEffect(() => {
+    fetchOfficeLocation();
     checkLocation();
     return () => {
       // Cleanup camera stream
@@ -37,7 +32,42 @@ export default function ClockIn() {
     };
   }, []);
 
+  const fetchOfficeLocation = async () => {
+    try {
+      const locationDoc = await getDoc(doc(db, 'settings', 'officeLocation'));
+      if (locationDoc.exists()) {
+        const data = locationDoc.data();
+        setOfficeLocation({
+          lat: data.latitude,
+          lng: data.longitude,
+          radius: data.radius
+        });
+      } else {
+        // Fallback to default location if not set
+        setOfficeLocation({
+          lat: 28.6139,
+          lng: 77.2090,
+          radius: 100
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching office location:', error);
+      // Fallback to default location
+      setOfficeLocation({
+        lat: 28.6139,
+        lng: 77.2090,
+        radius: 100
+      });
+    }
+  };
+
   const checkLocation = () => {
+    if (!officeLocation) {
+      setLocationError('Office location not configured. Please contact your administrator.');
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     
     if (!navigator.geolocation) {
@@ -55,10 +85,10 @@ export default function ClockIn() {
         
         const distance = calculateDistance(
           userLat, userLng, 
-          OFFICE_LOCATION.lat, OFFICE_LOCATION.lng
+          officeLocation.lat, officeLocation.lng
         );
         
-        if (distance <= OFFICE_LOCATION.radius) {
+        if (distance <= officeLocation.radius) {
           setIsInOffice(true);
           setLocationError('');
         } else {
@@ -170,7 +200,7 @@ export default function ClockIn() {
         employeeName: currentUser.name,
         date: today,
         clockIn: clockInTime.toTimeString().split(' ')[0],
-        clockInTimestamp: clockInTime.toISOString(),
+        clockInTimestamp: serverTimestamp(),
         location: userLocation,
         selfieURL: selfieURL,
         clockOut: null,

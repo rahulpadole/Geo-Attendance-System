@@ -6,7 +6,7 @@ import {
   signOut, 
   onAuthStateChanged 
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -28,7 +28,7 @@ export function AuthProvider({ children }) {
       role: userData.role,
       name: userData.name,
       employeeId: userData.employeeId,
-      createdAt: new Date().toISOString(),
+      createdAt: serverTimestamp(),
       isActive: true
     });
     
@@ -50,8 +50,16 @@ export function AuthProvider({ children }) {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          setUserRole(userData.role);
-          setCurrentUser({ ...user, ...userData });
+          // Check if user is active
+          if (userData.isActive) {
+            setUserRole(userData.role);
+            setCurrentUser({ ...user, ...userData });
+          } else {
+            // User is deactivated, sign them out
+            await signOut(auth);
+            setCurrentUser(null);
+            setUserRole(null);
+          }
         }
       } else {
         setCurrentUser(null);

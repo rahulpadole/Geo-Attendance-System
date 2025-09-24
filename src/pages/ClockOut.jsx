@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import Layout from '../components/Layout';
 
 export default function ClockOut() {
@@ -60,7 +60,7 @@ export default function ClockOut() {
 
       await updateDoc(doc(db, 'attendance', todayRecord.id), {
         clockOut: clockOutTimeString,
-        clockOutTimestamp: clockOutTime.toISOString(),
+        clockOutTimestamp: serverTimestamp(),
         hoursWorked: hoursWorked
       });
 

@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 // Pages
 import Login from './pages/Login';
+import AdminSetup from './pages/AdminSetup';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import ClockIn from './pages/ClockIn';
@@ -13,6 +14,7 @@ import ClockOut from './pages/ClockOut';
 // Admin Pages
 import ManageEmployees from './pages/admin/ManageEmployees';
 import AddEmployee from './pages/admin/AddEmployee';
+import OfficeLocation from './pages/admin/OfficeLocation';
 
 // CSS
 import './App.css';
@@ -25,6 +27,7 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
+            <Route path="/admin-setup" element={<AdminSetup />} />
             
             {/* Protected Routes */}
             <Route path="/dashboard" element={
@@ -62,6 +65,12 @@ function App() {
             <Route path="/admin/employees/add" element={
               <ProtectedRoute requiredRole="admin">
                 <AddEmployee />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin/location" element={
+              <ProtectedRoute requiredRole="admin">
+                <OfficeLocation />
               </ProtectedRoute>
             } />
             

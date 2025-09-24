@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { createFirstAdmin } from '../utils/initAdmin';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,11 +9,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Make admin creation function available in browser console
-    window.createFirstAdmin = createFirstAdmin;
-  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();

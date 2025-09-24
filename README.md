@@ -47,9 +47,9 @@ The following environment variables are required:
 
 ### 3. Create First Admin User
 1. Start the application: `npm run dev`
-2. Open browser console on the login page
-3. Run: `window.createFirstAdmin('admin@company.com', 'password123', 'Admin User')`
-4. Replace with your desired admin credentials
+2. Navigate to `/admin-setup` in your browser
+3. Fill out the admin registration form with your desired credentials
+4. This page will only work if no admin accounts exist in the system
 
 ### 4. Application Setup
 1. Login as admin
