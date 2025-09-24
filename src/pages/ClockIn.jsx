@@ -23,7 +23,6 @@ export default function ClockIn() {
 
   useEffect(() => {
     fetchOfficeLocation();
-    checkLocation();
     return () => {
       // Cleanup camera stream
       if (cameraStream) {
@@ -31,6 +30,13 @@ export default function ClockIn() {
       }
     };
   }, []);
+
+  // Check location when office location is loaded
+  useEffect(() => {
+    if (officeLocation) {
+      checkLocation();
+    }
+  }, [officeLocation]);
 
   const fetchOfficeLocation = async () => {
     try {

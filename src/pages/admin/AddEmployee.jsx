@@ -28,14 +28,19 @@ export default function AddEmployee() {
     setError('');
 
     try {
-      await signup(formData.email, formData.password, {
-        name: formData.name,
-        role: 'employee',
-        employeeId: formData.employeeId
-      });
-
-      alert('Employee added successfully!');
-      navigate('/admin/employees');
+      // Note: This is a simplified implementation for demo purposes.
+      // In production, this should be handled by a Cloud Function to avoid
+      // session switching issues. For now, we'll provide instructions instead.
+      
+      setError(`
+        To add an employee, please use one of these methods:
+        1. Provide the employee credentials to them and ask them to create their own account
+        2. Set up a Cloud Function to handle user creation securely
+        3. Use Firebase Admin SDK on a backend server
+        
+        Current client-side creation would log you out and into the new employee account.
+      `);
+      
     } catch (error) {
       setError('Failed to add employee: ' + error.message);
     } finally {

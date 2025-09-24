@@ -37,7 +37,9 @@ A comprehensive web application for employee attendance management with geolocat
 2. Enable Authentication with Email/Password
 3. Enable Firestore Database
 4. Enable Storage
-5. Get your Firebase configuration keys
+5. Configure Firestore Security Rules (copy from firestore.rules file)
+6. Configure Storage Security Rules (copy from storage.rules file)
+7. Get your Firebase configuration keys
 
 ### 2. Environment Variables
 The following environment variables are required:
@@ -128,6 +130,25 @@ npm run dev
 # Build for production
 npm run build
 ```
+
+## Production Deployment Notes
+
+### Security Considerations
+1. **Firestore Security Rules**: Deploy the provided firestore.rules to ensure data access control
+2. **Storage Security Rules**: Deploy the provided storage.rules to secure photo uploads
+3. **Employee Creation**: Client-side employee creation is disabled for security. Use Cloud Functions or manual invitation flows
+4. **Admin Bootstrap**: The system uses a secure bootstrap mechanism that only allows first admin creation when no admins exist
+
+### Known Limitations
+- Employee creation is currently disabled to prevent session switching issues
+- Admin setup page allows first-admin creation (secure for single-tenant deployments)
+- Client-side geolocation can be spoofed (consider server-side validation)
+
+### Recommended Enhancements
+- Implement Cloud Functions for user management
+- Add attendance report generation and export
+- Implement push notifications for attendance reminders
+- Add multi-location support for distributed organizations
 
 ## Support
 

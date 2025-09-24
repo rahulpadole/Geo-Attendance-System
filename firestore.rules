@@ -1,0 +1,114 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection - Secure access control
+    match /users/{userId} {
+      // Users can read their own data if they are active
+      allow read: if request.auth != null 
+        && request.auth.uid == userId 
+        && (resource == null || resource.data.isActive == true);
+      
+      // Users can only update safe fields (name, employeeId) - not role or isActive
+      allow update: if request.auth != null 
+        && request.auth.uid == userId 
+        && resource.data.isActive == true
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['name', 'employeeId'])
+        && request.resource.data.role == resource.data.role  // Role cannot change
+        && request.resource.data.isActive == resource.data.isActive  // isActive cannot change
+        && request.resource.data.email == resource.data.email;  // Email cannot change
+      
+      // Allow user creation only by existing admins or during controlled bootstrap
+      allow create: if request.auth != null 
+        && request.auth.uid == userId
+        && (
+          // Normal case: Admin creating new users
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true) ||
+          // Bootstrap case: First admin creation when bootstrap flag is set
+          (request.resource.data.role == 'admin' &&
+           exists(/databases/$(database)/documents/settings/bootstrap) &&
+           get(/databases/$(database)/documents/settings/bootstrap).data.enabled == true)
+        );
+      
+      // Allow admins to read all users
+      allow read: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+      
+      // Allow admins to update any user (including role and isActive)
+      allow update: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+    
+    // Attendance collection - Strict rules for attendance records
+    match /attendance/{attendanceId} {
+      // Users can read their own attendance records
+      allow read: if request.auth != null 
+        && request.auth.uid == resource.data.employeeId
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+      
+      // Allow admins to read all attendance records
+      allow read: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+      
+      // Strict create rules - clock in only
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.employeeId
+        && request.resource.data.clockInTimestamp == request.time
+        && request.resource.data.clockOut == null
+        && request.resource.data.clockOutTimestamp == null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+        
+      // Strict update rules - clock out only, immutable fields cannot change
+      allow update: if request.auth != null 
+        && request.auth.uid == resource.data.employeeId
+        && request.resource.data.clockOutTimestamp == request.time
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['clockOut', 'clockOutTimestamp', 'hoursWorked'])
+        && request.resource.data.employeeId == resource.data.employeeId  // Immutable
+        && request.resource.data.date == resource.data.date  // Immutable
+        && request.resource.data.clockIn == resource.data.clockIn  // Immutable
+        && request.resource.data.clockInTimestamp == resource.data.clockInTimestamp  // Immutable
+        && request.resource.data.selfieURL == resource.data.selfieURL  // Immutable
+        && request.resource.data.location == resource.data.location  // Immutable
+        && request.resource.data.clockOut != null  // Clock out must be set
+        && resource.data.clockOut == null  // Can only update if not already clocked out
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+    
+    // Settings collection - Office location readable by all, writable by admins only
+    match /settings/officeLocation {
+      // All authenticated active users can read office location
+      allow read: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+      
+      // Only admins can write office location
+      allow write: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+    
+    // Other settings - admin only
+    match /settings/{settingId} {
+      allow read, write: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+    
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

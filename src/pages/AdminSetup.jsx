@@ -23,11 +23,22 @@ export default function AdminSetup() {
 
   const checkExistingAdmins = async () => {
     try {
+      // Check if any admins exist
       const q = query(collection(db, 'users'), where('role', '==', 'admin'));
       const querySnapshot = await getDocs(q);
       
       if (!querySnapshot.empty) {
         setHasAdmins(true);
+      } else {
+        // Enable bootstrap mode if no admins exist
+        try {
+          await setDoc(doc(db, 'settings', 'bootstrap'), {
+            enabled: true,
+            createdAt: serverTimestamp()
+          });
+        } catch (error) {
+          console.error('Error enabling bootstrap mode:', error);
+        }
       }
     } catch (error) {
       console.error('Error checking for existing admins:', error);
@@ -87,6 +98,12 @@ export default function AdminSetup() {
         employeeId: 'ADMIN001',
         createdAt: serverTimestamp(),
         isActive: true
+      });
+
+      // Disable bootstrap mode after first admin is created
+      await setDoc(doc(db, 'settings', 'bootstrap'), {
+        enabled: false,
+        disabledAt: serverTimestamp()
       });
 
       alert('Admin account created successfully! You can now login.');
