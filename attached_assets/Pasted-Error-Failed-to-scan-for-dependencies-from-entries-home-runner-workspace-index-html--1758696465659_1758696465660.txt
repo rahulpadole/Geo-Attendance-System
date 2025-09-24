@@ -1,0 +1,84 @@
+Error:   Failed to scan for dependencies from entries:
+  /home/runner/workspace/index.html
+
+  ✘ [ERROR] The symbol "React" has already been declared
+
+    src/components/Layout.jsx:49:7:
+      49 │ import React from 'react';
+         ╵        ~~~~~
+
+  The symbol "React" was originally declared here:
+
+    src/components/Layout.jsx:1:7:
+      1 │ import React from 'react';
+        ╵        ~~~~~
+
+
+✘ [ERROR] The symbol "useNavigate" has already been declared
+
+    src/components/Layout.jsx:50:9:
+      50 │ import { useNavigate } from 'react-router-dom';
+         ╵          ~~~~~~~~~~~
+
+  The symbol "useNavigate" was originally declared here:
+
+    src/components/Layout.jsx:2:15:
+      2 │ import { Link, useNavigate } from 'react-router-dom';
+        ╵                ~~~~~~~~~~~
+
+
+✘ [ERROR] The symbol "useAuth" has already been declared
+
+    src/components/Layout.jsx:51:9:
+      51 │ import { useAuth } from '../contexts/AuthContext';
+         ╵          ~~~~~~~
+
+  The symbol "useAuth" was originally declared here:
+
+    src/components/Layout.jsx:3:9:
+      3 │ import { useAuth } from '../contexts/AuthContext';
+        ╵          ~~~~~~~
+
+
+✘ [ERROR] Multiple exports with the same name "default"
+
+    src/components/Layout.jsx:53:7:
+      53 │ export default function Layout({ children, title }) {
+         ╵        ~~~~~~~
+
+  The name "default" was originally exported here:
+
+    src/components/Layout.jsx:5:7:
+      5 │ export default function Layout({ children }) {
+        ╵        ~~~~~~~
+
+
+✘ [ERROR] The symbol "Layout" has already been declared
+
+    src/components/Layout.jsx:53:24:
+      53 │ export default function Layout({ children, title }) {
+         ╵                         ~~~~~~
+
+  The symbol "Layout" was originally declared here:
+
+    src/components/Layout.jsx:5:24:
+      5 │ export default function Layout({ children }) {
+        ╵                         ~~~~~~
+
+  Duplicate top-level function declarations are not allowed in an ECMAScript module. This file is considered to be an ECMAScript module because of the "export" keyword here:
+
+    src/components/Layout.jsx:53:0:
+      53 │ export default function Layout({ children, title }) {
+         ╵ ~~~~~~
+
+
+    at failureErrorWithLog (/home/runner/workspace/node_modules/esbuild/lib/main.js:1650:15)
+    at /home/runner/workspace/node_modules/esbuild/lib/main.js:1059:25
+    at runOnEndCallbacks (/home/runner/workspace/node_modules/esbuild/lib/main.js:1485:45)
+    at buildResponseToResult (/home/runner/workspace/node_modules/esbuild/lib/main.js:1057:7)
+    at /home/runner/workspace/node_modules/esbuild/lib/main.js:1069:9
+    at new Promise (<anonymous>)
+    at requestCallbacks.on-end (/home/runner/workspace/node_modules/esbuild/lib/main.js:1068:54)
+    at handleRequest (/home/runner/workspace/node_modules/esbuild/lib/main.js:731:17)
+    at handleIncomingPacket (/home/runner/workspace/node_modules/esbuild/lib/main.js:756:7)
+    at Socket.readFromStdout (/home/runner/workspace/node_modules/esbuild/lib/main.js:679:7)
