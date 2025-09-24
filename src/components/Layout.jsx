@@ -2,56 +2,8 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-export default function Layout({ children }) {
-  const { currentUser, userRole, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Failed to log out', error);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-blue-600 text-white p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold">
-            {userRole === 'admin' ? 'Admin Dashboard' : 'Employee Portal'}
-          </h1>
-          <div className="flex items-center space-x-4">
-            {currentUser && (
-              <>
-                <span>Welcome, {currentUser.name}</span>
-                <Link to="/profile" className="hover:underline">
-                  Profile
-                </Link>
-                <button 
-                  onClick={handleLogout}
-                  className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded"
-                >
-                  Logout
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
-      <main className="container mx-auto p-4">
-        {children}
-      </main>
-    </div>
-  );
-}
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-
 export default function Layout({ children, title }) {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, userRole, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -77,12 +29,26 @@ export default function Layout({ children, title }) {
               <span className="text-sm text-gray-700">
                 {currentUser?.email}
               </span>
-              <button
-                onClick={() => navigate('/dashboard')}
+              {userRole === 'admin' && (
+                <Link 
+                  to="/admin/manage-employees"
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Admin Panel
+                </Link>
+              )}
+              <Link 
+                to="/dashboard"
                 className="text-gray-600 hover:text-gray-900"
               >
                 Dashboard
-              </button>
+              </Link>
+              <Link 
+                to="/profile"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Profile
+              </Link>
               <button
                 onClick={handleLogout}
                 className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm"
