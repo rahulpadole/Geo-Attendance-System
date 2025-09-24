@@ -53,7 +53,12 @@ export function AuthProvider({ children }) {
           // Check if user is active
           if (userData.isActive) {
             setUserRole(userData.role);
-            setCurrentUser({ ...user, ...userData });
+            // Convert Firestore timestamp to Date if it exists
+            const processedUserData = {
+              ...userData,
+              createdAt: userData.createdAt?.toDate?.() || userData.createdAt
+            };
+            setCurrentUser({ ...user, ...processedUserData });
           } else {
             // User is deactivated, sign them out
             await signOut(auth);

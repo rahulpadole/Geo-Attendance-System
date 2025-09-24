@@ -250,3 +250,215 @@ export default function OfficeLocation() {
     </Layout>
   );
 }
+import React, { useState, useEffect } from 'react';
+import { db } from '../../firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import Layout from '../../components/Layout';
+
+export default function OfficeLocation() {
+  const [location, setLocation] = useState({
+    latitude: '',
+    longitude: '',
+    radius: 100,
+    address: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    fetchCurrentLocation();
+  }, []);
+
+  const fetchCurrentLocation = async () => {
+    try {
+      const locationDoc = await getDoc(doc(db, 'settings', 'officeLocation'));
+      if (locationDoc.exists()) {
+        const data = locationDoc.data();
+        setLocation({
+          latitude: data.latitude || '',
+          longitude: data.longitude || '',
+          radius: data.radius || 100,
+          address: data.address || ''
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching office location:', error);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setLocation(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setError('Geolocation is not supported by this browser');
+      return;
+    }
+
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation(prev => ({
+          ...prev,
+          latitude: position.coords.latitude.toString(),
+          longitude: position.coords.longitude.toString()
+        }));
+        setLoading(false);
+        setError('');
+      },
+      (error) => {
+        setError('Unable to get current location');
+        setLoading(false);
+      }
+    );
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    if (!location.latitude || !location.longitude) {
+      setError('Latitude and longitude are required');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await setDoc(doc(db, 'settings', 'officeLocation'), {
+        latitude: parseFloat(location.latitude),
+        longitude: parseFloat(location.longitude),
+        radius: parseInt(location.radius),
+        address: location.address,
+        updatedAt: serverTimestamp()
+      });
+
+      setSuccess('Office location updated successfully!');
+    } catch (error) {
+      console.error('Error updating office location:', error);
+      setError('Failed to update office location');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Layout>
+      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Office Location Settings</h1>
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            {success}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Latitude *
+              </label>
+              <input
+                type="number"
+                step="any"
+                name="latitude"
+                value={location.latitude}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="28.6139"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Longitude *
+              </label>
+              <input
+                type="number"
+                step="any"
+                name="longitude"
+                value={location.longitude}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="77.2090"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Radius (meters) *
+            </label>
+            <input
+              type="number"
+              name="radius"
+              value={location.radius}
+              onChange={handleInputChange}
+              required
+              min="1"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="100"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Office Address
+            </label>
+            <textarea
+              name="address"
+              value={location.address}
+              onChange={handleInputChange}
+              rows="3"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter office address"
+            />
+          </div>
+
+          <div className="flex space-x-4">
+            <button
+              type="button"
+              onClick={getCurrentLocation}
+              disabled={loading}
+              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+            >
+              {loading ? 'Getting Location...' : 'Use Current Location'}
+            </button>
+            
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : 'Save Location'}
+            </button>
+          </div>
+        </form>
+
+        <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
+          <h3 className="text-sm font-medium text-yellow-800 mb-2">Note:</h3>
+          <p className="text-sm text-yellow-700">
+            Employees will only be able to clock in when they are within the specified radius 
+            of the office location. Make sure to set appropriate coordinates and radius.
+          </p>
+        </div>
+      </div>
+    </Layout>
+  );
+}

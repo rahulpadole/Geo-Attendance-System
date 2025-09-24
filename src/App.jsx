@@ -15,6 +15,8 @@ import ClockOut from './pages/ClockOut';
 import ManageEmployees from './pages/admin/ManageEmployees';
 import AddEmployee from './pages/admin/AddEmployee';
 import OfficeLocation from './pages/admin/OfficeLocation';
+import AttendanceRecords from './pages/admin/AttendanceRecords';
+import Reports from './pages/admin/Reports';
 
 // CSS
 import './App.css';
@@ -71,6 +73,18 @@ function App() {
             <Route path="/admin/location" element={
               <ProtectedRoute requiredRole="admin">
                 <OfficeLocation />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin/attendance" element={
+              <ProtectedRoute requiredRole="admin">
+                <AttendanceRecords />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin/reports" element={
+              <ProtectedRoute requiredRole="admin">
+                <Reports />
               </ProtectedRoute>
             } />
             

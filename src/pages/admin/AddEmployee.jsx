@@ -27,22 +27,38 @@ export default function AddEmployee() {
     setLoading(true);
     setError('');
 
+    if (!formData.name.trim() || !formData.email.trim() || !formData.password) {
+      setError('Please fill in all required fields');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Note: This is a simplified implementation for demo purposes.
-      // In production, this should be handled by a Cloud Function to avoid
-      // session switching issues. For now, we'll provide instructions instead.
-      
-      setError(`
-        To add an employee, please use one of these methods:
-        1. Provide the employee credentials to them and ask them to create their own account
-        2. Set up a Cloud Function to handle user creation securely
-        3. Use Firebase Admin SDK on a backend server
-        
-        Current client-side creation would log you out and into the new employee account.
-      `);
-      
+      await signup(formData.email, formData.password, {
+        role: 'employee',
+        name: formData.name,
+        employeeId: formData.employeeId || `EMP${Date.now().toString().slice(-6)}`
+      });
+
+      alert('Employee added successfully!');
+      navigate('/admin/employees');
     } catch (error) {
-      setError('Failed to add employee: ' + error.message);
+      console.error('Error adding employee:', error);
+      if (error.code === 'auth/email-already-in-use') {
+        setError('An account with this email already exists');
+      } else if (error.code === 'auth/weak-password') {
+        setError('Password is too weak');
+      } else if (error.code === 'auth/invalid-email') {
+        setError('Invalid email address');
+      } else {
+        setError('Failed to add employee: ' + error.message);
+      }
     } finally {
       setLoading(false);
     }

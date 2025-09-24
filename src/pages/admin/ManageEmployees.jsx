@@ -110,7 +110,12 @@ export default function ManageEmployees() {
                           {employee.name}
                         </div>
                         <div className="text-sm text-gray-500">
-                          Joined: {new Date(employee.createdAt).toLocaleDateString()}
+                          Joined: {employee.createdAt ? 
+                            (employee.createdAt.toDate ? 
+                              employee.createdAt.toDate().toLocaleDateString() : 
+                              new Date(employee.createdAt).toLocaleDateString()
+                            ) : 'Unknown'
+                          }
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
