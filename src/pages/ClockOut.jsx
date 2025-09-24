@@ -156,3 +156,29 @@ export default function ClockOut() {
     </Layout>
   );
 }
+import React from 'react';
+
+const ClockOut = () => {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+        <h2 className="text-2xl font-bold text-center mb-6">Clock Out</h2>
+        <p className="text-gray-600 text-center mb-6">
+          This feature will calculate your work hours for today.
+        </p>
+        <div className="text-center">
+          <button className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-semibold">
+            Clock Out (Coming Soon)
+          </button>
+        </div>
+        <div className="mt-4 text-center">
+          <a href="/dashboard" className="text-blue-500 hover:text-blue-600">
+            Back to Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ClockOut;

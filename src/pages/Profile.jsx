@@ -146,3 +146,43 @@ export default function Profile() {
     </Layout>
   );
 }
+import React from 'react';
+import { useAuth } from '../contexts/AuthContext';
+
+const Profile = () => {
+  const { currentUser, userRole } = useAuth();
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
+          </div>
+          <div className="px-6 py-4">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Email</label>
+                <p className="text-gray-900">{currentUser?.email}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Role</label>
+                <p className="text-gray-900 capitalize">{userRole}</p>
+              </div>
+            </div>
+            <div className="mt-6">
+              <a
+                href="/dashboard"
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+              >
+                Back to Dashboard
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Profile;
