@@ -27,10 +27,6 @@ externalPort = 3000
 localPort = 40323
 externalPort = 3001
 
-[[ports]]
-localPort = 40437
-externalPort = 3002
-
 [agent]
 expertMode = true
 integrations = ["firebase_barebones_javascript:1.0.0"]
