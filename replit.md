@@ -26,18 +26,17 @@ This is a React-based Employee Attendance System with Firebase authentication an
 - ✅ Workflow configured and running successfully
 - ✅ Deployment configuration set up for production (autoscale with npm build + serve)
 - ✅ Project import completed successfully
-- ⚠️ Firebase secrets need to be configured for authentication to work
+- ✅ Firebase secrets configured (API key, Project ID, App ID)
+- ⚠️ Firebase domain authorization may be needed
 
-## Firebase Setup Required
-The application uses Firebase for authentication and database. To complete the setup:
+## Firebase Domain Authorization Required
+The Firebase credentials are configured, but you may need to authorize your Replit domain in Firebase:
 
-1. Go to the Firebase console and create a project
-2. Enable Authentication with Google sign-in
-3. Add authorized domains for your Replit app
-4. Get the project configuration values and set these secrets:
-   - VITE_FIREBASE_PROJECT_ID
-   - VITE_FIREBASE_APP_ID
-   - VITE_FIREBASE_API_KEY
+1. Go to Firebase Console → Authentication → Settings → Authorized domains
+2. Add your Replit app domain (the URL you see in your browser)
+3. The domain format should be: `your-replit-url.replit.dev`
+
+This will resolve the "invalid-api-key" error which is often related to domain restrictions rather than the actual key being invalid.
 
 ## Key Features
 - Employee clock in/out system
