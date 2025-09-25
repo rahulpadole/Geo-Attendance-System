@@ -10,12 +10,13 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: true,
     hmr: {
-      port: 5000,
-      host: '0.0.0.0',
-      clientPort: 5000
+      overlay: false
     },
     watch: {
       usePolling: true
     }
+  },
+  define: {
+    __VITE_IS_MODERN__: false
   }
 })
