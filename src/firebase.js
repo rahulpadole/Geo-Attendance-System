@@ -1,22 +1,20 @@
 
 // Firebase configuration based on firebase_barebones_javascript integration
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD7m1VKeOrxGvHFHJT-Cr0PVZBBHhiGDMw",
-  authDomain: "geo-attendance-system-179a4.firebaseapp.com",
-  projectId: "geo-attendance-system-179a4",
-  storageBucket: "geo-attendance-system-179a4.firebasestorage.app",
-  messagingSenderId: "53451957706",
-  appId: "1:53451957706:web:885a22cb2f69d852fa1b33",
-  measurementId: "G-LMP6D1VW54"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebasestorage.app`,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase (prevent duplicate app initialization)
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
 // Initialize Firebase Authentication and get a reference to the service
 export const auth = getAuth(app);

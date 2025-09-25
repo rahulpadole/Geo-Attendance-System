@@ -1,0 +1,26 @@
+
+DOMException {code: 20, name: "AbortError", message: "The user aborted a request.", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+[2025-09-25T08:41:11.079Z]  @firebase/firestore: Firestore (12.3.0): WebChannelConnection RPC 'Listen' stream 0x7294a89d transport errored. Name: undefined Message: undefined
+DOMException {code: 20, name: "AbortError", message: "The user aborted a request.", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+DOMException {code: 20, name: "AbortError", message: "The user aborted a request.", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+DOMException {code: 20, name: "AbortError", message: "The user aborted a request.", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+[2025-09-25T08:41:15.064Z]  @firebase/firestore: Firestore (12.3.0): WebChannelConnection RPC 'Listen' stream 0x7294a89e transport errored. Name: undefined Message: undefined
+DOMException {code: 20, name: "AbortError", message: "The user aborted a request.", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+DOMException {code: 20, name: "AbortError", message: "The user aborted a request.", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+DOMException {code: 20, name: "AbortError", message: "The user aborted a request.", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+[2025-09-25T08:41:20.540Z]  @firebase/firestore: Firestore (12.3.0): WebChannelConnection RPC 'Listen' stream 0x7294a89f transport errored. Name: undefined Message: undefined
+DOMException {code: 20, name: "AbortError", message: "The user aborted a request.", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+DOMException {code: 20, name: "AbortError", message: "The user aborted a request.", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+DOMException {code: 20, name: "AbortError", message: "The user aborted a request.", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+[2025-09-25T08:41:30.669Z]  @firebase/firestore: Firestore (12.3.0): WebChannelConnection RPC 'Listen' stream 0x7294a8a0 transport errored. Name: undefined Message: undefined
+DOMException {code: 20, name: "AbortError", message: "The user aborted a request.", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
