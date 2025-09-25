@@ -15,11 +15,13 @@ export default function ClockOut() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    checkTodaysAttendance();
-  }, []);
+    if (userProfile?.employeeId) {
+      checkTodaysAttendance();
+    }
+  }, [userProfile]);
 
   const checkTodaysAttendance = async () => {
-    if (!currentUser) return;
+    if (!currentUser || !userProfile?.employeeId) return;
 
     try {
       const today = new Date().toISOString().split('T')[0];
@@ -44,12 +46,13 @@ export default function ClockOut() {
     }
   };
 
-  const calculateHours = (clockIn, clockOut) => {
-    const clockInTime = new Date(`1970-01-01 ${clockIn}`);
-    const clockOutTime = new Date(`1970-01-01 ${clockOut}`);
-    const diffMs = clockOutTime - clockInTime;
+  const calculateHours = (clockInTimestamp, clockOutTimestamp) => {
+    // Use Firebase Timestamp objects for reliable calculation
+    const clockInMs = clockInTimestamp?.toMillis ? clockInTimestamp.toMillis() : clockInTimestamp.getTime();
+    const clockOutMs = clockOutTimestamp?.toMillis ? clockOutTimestamp.toMillis() : clockOutTimestamp.getTime();
+    const diffMs = clockOutMs - clockInMs;
     const diffHours = diffMs / (1000 * 60 * 60);
-    return diffHours.toFixed(2);
+    return Math.max(0, diffHours).toFixed(2);
   };
 
   const handleClockOut = async () => {
@@ -63,7 +66,7 @@ export default function ClockOut() {
     try {
       const now = new Date();
       const clockOutTime = now.toLocaleTimeString();
-      const hoursWorked = calculateHours(todayAttendance.clockIn, clockOutTime);
+      const hoursWorked = calculateHours(todayAttendance.clockInTimestamp, now);
 
       await updateDoc(doc(db, 'attendance', todayAttendance.id), {
         clockOut: clockOutTime,

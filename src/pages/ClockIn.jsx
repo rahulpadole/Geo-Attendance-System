@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
@@ -13,6 +13,7 @@ export default function ClockIn() {
   const [photo, setPhoto] = useState(null);
   const [photoError, setPhotoError] = useState('');
   const [stream, setStream] = useState(null);
+  const streamRef = useRef(null);
   const [officeLocation, setOfficeLocation] = useState(null);
   const [alreadyClockedIn, setAlreadyClockedIn] = useState(false);
 
@@ -21,10 +22,16 @@ export default function ClockIn() {
 
   useEffect(() => {
     getOfficeLocation();
-    checkTodaysAttendance();
+    if (userProfile?.employeeId) {
+      checkTodaysAttendance();
+    }
+  }, [userProfile]);
+
+  // Separate effect for stream cleanup on unmount
+  useEffect(() => {
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
       }
     };
   }, []);
@@ -48,7 +55,7 @@ export default function ClockIn() {
   };
 
   const checkTodaysAttendance = async () => {
-    if (!currentUser) return;
+    if (!currentUser || !userProfile?.employeeId) return;
 
     try {
       const today = new Date().toISOString().split('T')[0];
@@ -105,6 +112,7 @@ export default function ClockIn() {
         video: { facingMode: 'user' } 
       });
       setStream(mediaStream);
+      streamRef.current = mediaStream;
 
       const video = document.getElementById('video');
       if (video) {
@@ -117,7 +125,7 @@ export default function ClockIn() {
 
   const capturePhoto = () => {
     const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
+    const canvas = document.getElementById('hidden-canvas');
 
     if (video && canvas) {
       const context = canvas.getContext('2d');
@@ -127,8 +135,9 @@ export default function ClockIn() {
 
       canvas.toBlob((blob) => {
         setPhoto(blob);
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
           setStream(null);
         }
       }, 'image/jpeg', 0.8);
@@ -151,6 +160,11 @@ export default function ClockIn() {
   };
 
   const handleClockIn = async () => {
+    if (!userProfile?.employeeId) {
+      alert('User profile not loaded. Please wait and try again.');
+      return;
+    }
+
     if (!location) {
       setLocationError('Please get your location first');
       return;
@@ -318,7 +332,7 @@ export default function ClockIn() {
           {loading ? 'Clocking In...' : 'Clock In'}
         </button>
 
-        <canvas id="canvas" style={{ display: 'none' }} />
+        <canvas id="hidden-canvas" style={{ display: 'none' }} />
       </div>
     </Layout>
   );

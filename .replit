@@ -16,6 +16,10 @@ publicDir = "dist"
 run = ["npx", "serve", "-s", "dist", "-l", "5000"]
 
 [[ports]]
+localPort = 4173
+externalPort = 3002
+
+[[ports]]
 localPort = 5000
 externalPort = 80
 

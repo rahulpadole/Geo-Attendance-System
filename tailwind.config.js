@@ -9,6 +9,7 @@ export default {
     extend: {},
   },
   plugins: [
-    require('@tailwindcss/forms'),
+    // Removed @tailwindcss/forms for v4 compatibility
+    // Form styles will be handled with standard Tailwind utilities
   ],
 }
