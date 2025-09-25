@@ -14,7 +14,9 @@ export default defineConfig({
     ],
     hmr: {
       port: 5000,
-      host: '0.0.0.0'
+      host: '0.0.0.0',
+      clientPort: 5000,
+      protocol: 'ws'
     },
     watch: {
       usePolling: true
